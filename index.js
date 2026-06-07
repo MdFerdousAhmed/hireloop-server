@@ -29,6 +29,14 @@ async function run() {
     const database = client.db("hireloop_db");
     const jobsCollection = database.collection("jobs");
     const companiesCollection = database.collection("companies");
+    const userCollection = database.collection("user");
+
+    app.get("/api/users", async (req, res) => {
+
+      const cursor = userCollection.find().skip(6);
+      const result = await cursor.toArray();
+      res.json(result);
+    });
 
     app.get("/api/jobs", async (req, res) => {
       const query = {};
@@ -44,30 +52,40 @@ async function run() {
     });
 
     app.post("/api/jobs", async (req, res) => {
+
       const job = req.body;
-      try {
-        const result = await jobsCollection.insertOne(job);
-        res.status(201).json(result.ops[0]);
-      } catch (error) {
-        console.error("Error inserting job:", error);
-        res.status(500).json({ error: "Internal server error" });
-      }
+      const newJob = {
+         ...job,
+         createdAt: new Date()
+        };
+      const result = await jobsCollection.insertOne(newJob);
+      res.send(result);
+
+    });
+
+    app.get("/api/companies", async (req, res) => {
+      const cursor = companiesCollection.find();
+      const result = await cursor.toArray();
+      res.json(result);
     });
 
     app.get("/api/my/companies", async (req, res) => {
       const query = {};
-
       if (req.query.recruiterId) {
         query.recruiterId = req.query.recruiterId;
       }
 
       const result = await companiesCollection.findOne(query);
-      res.json(result ?? null);
+      res.json(result || {});
     });
 
     app.post("/api/companies", async (req, res) => {
       const company = req.body;
-      const result = await companiesCollection.insertOne(company);
+      const newCompany = {
+        ...company,
+        createdAt: new Date()
+      };
+      const result = await companiesCollection.insertOne(newCompany);
       res.status(201).json(result);
     });
 
